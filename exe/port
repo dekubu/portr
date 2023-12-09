@@ -1,0 +1,69 @@
+#!/usr/bin/env ruby
+
+require 'thor'
+require 'json'
+
+class PortManager < Thor
+    PORT_FILE = '/var/harbr/ports'
+    PORT_RANGE = 60535..65535
+    PORTS = {}
+
+    no_commands {
+        def load_ports
+            if File.exist?(PORT_FILE)
+                PORTS.merge!(JSON.parse(File.read(PORT_FILE)))
+            end
+        end
+
+        def save_ports
+            File.write(PORT_FILE, PORTS.to_json)
+        end
+    }
+
+    desc "assign KEY", "Assign a random port to a given key"
+    def assign(key)
+        load_ports
+        available_ports = PORT_RANGE.to_a - PORTS.keys.map(&:to_i)
+        if available_ports.empty?
+            puts 'No available ports'
+            return
+        end
+
+        port = available_ports.sample
+        PORTS[port.to_s] = key
+        save_ports
+        puts "Assigned port: #{port} to key: #{key}"
+    end
+
+    desc "release PORT", "Release a specified port"
+    def release(port)
+        load_ports
+        if PORTS.delete(port.to_s)
+            save_ports
+            puts "Released port: #{port}"
+        else
+            puts "Port #{port} is not assigned"
+        end
+    end
+
+    desc "pool", "List all assigned ports"
+    def pool
+        load_ports
+        puts 'Assigned Ports:'
+        PORTS.each { |port, key| puts "Port: #{port}, Key: #{key}" }
+    end
+
+    desc "key KEY", "Get the port for a given key"
+    def key(key)
+        load_ports
+        port = PORTS.key(key)
+        if port
+            port = port.to_i
+            puts port
+        else
+            puts "No port assigned to key #{key}"
+        end
+    end
+end
+
+PortManager.start(ARGV)
