@@ -24,20 +24,19 @@ class PortManager < Thor
     def assign(key)
         load_ports
         if PORTS.value?(key.downcase)
-            puts "Key #{key} is already assigned to a port"
+            invoke :key, [key]
             return
         end
 
         available_ports = PORT_RANGE.to_a - PORTS.keys.map(&:to_i)
         if available_ports.empty?
-            puts 'No available ports'
-            return
+            raise 'No available ports'
         end
 
         port = available_ports.sample
         PORTS[port.to_s.downcase] = key
         save_ports
-        puts "Assigned port: #{port} to key: #{key}"
+        puts port
     end
 
     
@@ -57,7 +56,8 @@ class PortManager < Thor
     def pool
         load_ports
         puts 'Assigned Ports:'
-        PORTS.each { |port, key| puts "Port: #{port}, Key: #{key}" }
+        puts ""
+        PORTS.each { |port, key| puts "Port: #{port}, Key: #{key}\n" }
     end
 
     desc "key KEY", "Get the port for a given key"
