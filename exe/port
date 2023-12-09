@@ -23,6 +23,11 @@ class PortManager < Thor
     desc "assign KEY", "Assign a random port to a given key"
     def assign(key)
         load_ports
+        if PORTS.value?(key.downcase)
+            puts "Key #{key} is already assigned to a port"
+            return
+        end
+
         available_ports = PORT_RANGE.to_a - PORTS.keys.map(&:to_i)
         if available_ports.empty?
             puts 'No available ports'
@@ -30,10 +35,12 @@ class PortManager < Thor
         end
 
         port = available_ports.sample
-        PORTS[port.to_s] = key
+        PORTS[port.to_s.downcase] = key
         save_ports
         puts "Assigned port: #{port} to key: #{key}"
     end
+
+    
 
     desc "release PORT", "Release a specified port"
     def release(port)
@@ -56,7 +63,7 @@ class PortManager < Thor
     desc "key KEY", "Get the port for a given key"
     def key(key)
         load_ports
-        port = PORTS.key(key)
+        port = PORTS.key(key.downcase)
         if port
             port = port.to_i
             puts port
